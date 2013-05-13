@@ -1,4 +1,14 @@
-<!DOCTYPE html>
+<?php
+function array_iunique($array) {
+    return array_intersect_key($array,array_unique(
+                 array_map(strtolower,$array)));
+}
+
+function array_ikeys($array) {
+    return array_intersect_key($array,array_keys(
+                 array_map(strtolower,$array)));
+}
+?><!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -40,6 +50,7 @@
         p.replacementValues { display:none ;}
         small { font-size:12px; }
         p.delimiter_other { display:none ;}
+        input[type="checkbox"] { float: left; }
     </style>                       
     <script>
         function toggleReplaceFields() {
@@ -144,7 +155,7 @@
                         <h3>Replace</h3>
                         <p>
                             <input type="hidden" name="replace" value="no" />
-                            <input type="radio" name="replace" value="yes" id="replace_yes" /><label for="replace_yes" id="label_replace_yes"> Replace values in whole input</label>
+                            <input type="checkbox" name="replace" value="yes" id="replace_yes" /><label for="replace_yes" id="label_replace_yes"> Replace values in whole input</label>
                         </p>
                         <p class="replacementValues">
                             Replace <input type="text" name="replaceThis" /><br /> with <input type="text" name="replaceWith" />
@@ -166,6 +177,9 @@
                         <p class="delimiter_other">
                             <input type="text" name="delimiter_other" />
                         </p>
+                        <h3>Case-(in)sensitive</h3>
+                        <input type="hidden" name="case" value="sensitive" />
+                        <input type="checkbox" name="case" value="insensitive" id="insensitive" /><label for="insensitive">Make input case-insensitive</label>
                     </div>
                 </div>
                 <p>
@@ -186,6 +200,12 @@
             }
             $array = explode($delimiter,$_POST['input']);
             
+            $insensitive = false; if($_POST['case'] == 'insensitive') $insensitive = true;
+            
+            if($insensitive) {
+                $array = array_map('strtolower',$array);
+            }
+            
             /* Clean up */
             foreach($array as &$item) {
                 $item = trim($item);
@@ -201,14 +221,19 @@
                     if (count(array_keys($array, $value)) > 1) {
                         if($_POST['filtering']=='find_lines') {
                             $foundDupes[] = $value;
-                            $message = 'Found '.count($foundDupes).' duplicate lines in  your input.';
                         } elseif($_POST['filtering']=='find_values') {
                             $foundDupes[$value] = $value;
-                            $message = 'Found '.count($foundDupes).' duplicate values in  your input.';
                         }
                     }
                 }
-                $output = implode($delimiter,$output);
+                if($_POST['filtering']=='find_lines') {
+                    $output = $foundDupes;
+                    $message = 'Found '.count($foundDupes).' duplicate lines in your input.';
+                } elseif($_POST['filtering']=='find_values') {
+                    $output = $foundDupes;
+                    $output = array_unique($output);
+                    $message = 'Found '.count($foundDupes).' duplicate value(s) in  your input.';
+                }
             }
             
             /* Replace */
